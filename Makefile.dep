@@ -1,0 +1,26 @@
+turb_fluid.o: turb_fluid.cc turb_fluid.hh common.hh
+tf_grid.o: tf_grid.cc tf_grid.hh turb_fluid.hh common.hh
+tf_grid_mr.o: tf_grid_mr.cc tf_grid_mr.hh tf_grid.hh turb_fluid.hh common.hh
+glider.o: glider.cc glider.hh turb_fluid.hh common.hh
+common.o: common.cc common.hh
+lp_solve.o: lp_solve.cc lp_solve.hh
+k_func.o: k_func.cc k_func.hh common.hh
+gpr.o: gpr.cc gpr.hh k_func.hh lp_solve.hh common.hh
+tic_tac_toe.o: tic_tac_toe.cc tic_tac_toe.hh
+mcts.o: mcts.cc mcts.hh common.hh node.hh stats.hh
+connect_four.o: connect_four.cc connect_four.hh
+game_mcts.o: game_mcts.cc game_mcts.hh game.hh tf_grid.hh turb_fluid.hh \
+  common.hh gpr.hh k_func.hh
+game.o: game.cc game.hh tf_grid.hh turb_fluid.hh \
+  common.hh gpr.hh k_func.hh
+file_output.o: file_output.cc file_output.hh
+fileinfo.o: fileinfo.cc fileinfo.hh common.hh glider.hh turb_fluid.hh
+soaring_sim.o: soaring_sim.cc soaring_sim.hh fileinfo.hh common.hh glider.hh \
+  turb_fluid.hh tf_grid.hh tf_grid_mr.hh k_func.hh gpr.hh mcts.hh node.hh \
+  stats.hh wind_correl.hh path_store.hh mcts_sp.cc
+soaring_sim_io.o: soaring_sim_io.cc soaring_sim.hh \
+ fileinfo.hh common.hh glider.hh turb_fluid.hh  \
+ tf_grid.hh tf_grid_mr.hh k_func.hh \
+ gpr.hh mcts.hh node.hh stats.hh wind_correl.hh path_store.hh
+wind_correl.o: wind_correl.cc wind_correl.hh glider.hh turb_fluid.hh \
+  common.hh tf_grid.hh
