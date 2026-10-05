@@ -15,7 +15,7 @@
  * models, and turbulent flow simulation.
  * \param[in] filename the name of the configuration file to read from. */
 soaring_sim::soaring_sim(const char* filename) : fileinfo(filename),
-    nt(omp_get_max_threads()), mctst(gpt<nt?gpt:nt), path_output(false),
+    nt(max_threads()), mctst(gpt<nt?gpt:nt), path_output(false),
     tf(mr_pred_used()?(turb_fluid_grid*)
        new turb_fluid_grid_mr(nx,ny,nz,0,lx,0,ly,0,lz,w_Cinv,
                               w_alpha,h_segs,c_dur*mcts_depth,base_seed+1)
@@ -31,13 +31,13 @@ soaring_sim::soaring_sim(const char* filename) : fileinfo(filename),
 
     // If MCTS is in use, allocate memory for the MCTS calculations
     if(ptype==pt_mcts) {
-        unsigned long sbase=1+omp_get_max_threads()+base_seed;
+        unsigned long sbase=1+nt+base_seed;
 #pragma omp parallel num_threads(mctst)
         {
 
             // Initialize the MCTS class using a default score value based on
             // steady-state falling in zero wind
-            int t=omp_get_thread_num();
+            int t=thread_num();
             mc[t]=new mcts(gm->rtot,mcts_depth,mcts_ex_fac,fflags&512,sbase+t);
 
             // Initialize path data storage if needed
@@ -231,7 +231,7 @@ void soaring_sim::plan_mcts() {
     {
         // Each thread has a unique MCTS instance to use, which can be reset
         // and reused to plan for multiple gliders
-        mcts *mcp=mc[omp_get_thread_num()];
+        mcts *mcp=mc[thread_num()];
         mcp->dflags=dflags;
 #pragma omp for
         for(int j=0;j<gpt;j++) {

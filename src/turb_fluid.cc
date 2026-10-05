@@ -26,12 +26,7 @@ turb_fluid::turb_fluid(int m_,int n_,int o_,double ax_,double bx_,double ay_,dou
     facy(2*M_PI/(by-ay)), facz(2*M_PI/(bz-az)), Cinv(Cinv_), alpha(alpha_),
     fnor(sqrt(1./(48*M_PI)*alpha*facx*facy*facz)),
     kk((fftw_complex*)fftw_malloc(sizeof(fftw_complex)*mslice*o)),
-    htab(new double[2*(fftm+n)+1]), ftab(htab+1), fslots(1),
-#ifdef _OPENMP
-    nt(omp_get_max_threads()),
-#else
-    nt(1),
-#endif
+    htab(new double[2*(fftm+n)+1]), ftab(htab+1), fslots(1), nt(max_threads()),
     rtab(new double*[nt]), rng(new gsl_rng*[nt]) {
 #pragma omp parallel
     {

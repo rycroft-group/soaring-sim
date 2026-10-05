@@ -28,7 +28,7 @@ const double dt_pad=0.2;
 int main() {
 
     // Set up multi-threaded FFTW computations, if available
-#ifdef FFTW_OMP
+#ifdef _OPENMP
     fftw_init_threads();
     fftw_plan_with_nthreads(omp_get_max_threads());
 #endif

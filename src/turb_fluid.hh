@@ -11,10 +11,6 @@
 #include "common.hh"
 #include "en_spec.hh"
 
-#ifdef _OPENMP
-#include "omp.h"
-#endif
-
 /** \brief A class for simulating a 3D turbulence model in terms of Fourier
  * modes. */
 class turb_fluid {
@@ -174,14 +170,6 @@ class turb_fluid {
 #pragma omp atomic
             vp[2]+=vz;
         }
-        /** Returns the thread number, if the code was compiled with OpenMP
-         * support. Otherwise it returns zero.
-         * \return The thread number. */
-#ifdef _OPENMP
-        inline int thread_num() {return omp_get_thread_num();}
-#else
-        inline int thread_num() {return 0;}
-#endif
 };
 
 #endif

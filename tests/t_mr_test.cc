@@ -31,7 +31,7 @@ const double alpha=0.00913104,C=63.3783,Cinv=1/C;
 int main() {
 
     // Set up multi-threaded FFTW computations, if available
-#ifdef FFTW_OMP
+#ifdef _OPENMP
     fftw_init_threads();
     fftw_plan_with_nthreads(omp_get_max_threads());
 #endif

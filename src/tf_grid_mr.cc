@@ -39,7 +39,7 @@ turb_fluid_grid_mr::~turb_fluid_grid_mr() {
 void turb_fluid_grid_mr::calc_mr_fields() {
     for(int l=1;l<2*h_segs+2;l++) {
         double ld=double(l/2),T=rho*ld*ld,b1=T*Cinv,b2=-2*ld*rho*Cinv;
-#pragma omp for
+#pragma omp parallel for
         for(int k=0;k<o;k++) {
             fftw_complex *kp=kk+3*n*fftm*k,*kcp=kcopy+3*n*fftm*k;
             double w=sqr(facz*(k>o/2?o-k:k));

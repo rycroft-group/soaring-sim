@@ -19,7 +19,7 @@ int main(int argc,char **argv) {
     }
 
     // Set up multi-threaded FFTW computations, if available
-#ifdef FFTW_OMP
+#ifdef _OPENMP
     fftw_init_threads();
     fftw_plan_with_nthreads(omp_get_max_threads());
 #endif

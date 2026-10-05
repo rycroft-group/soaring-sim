@@ -7,9 +7,13 @@
 #ifdef _OPENMP
 #include "omp.h"
 inline double wtime() {return omp_get_wtime();}
+inline int thread_num() {return omp_get_thread_num();}
+inline int max_threads() {return omp_get_max_threads();}
 #else
 #include <ctime>
 inline double wtime() {return double(clock())/CLOCKS_PER_SEC;}
+inline int thread_num() {return 0;}
+inline int max_threads() {return 1;}
 #endif
 
 /** The numerical integration type. */

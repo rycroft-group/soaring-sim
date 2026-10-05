@@ -28,7 +28,8 @@ struct cli_stats {
      * \param[out] sig the standard deviation. */
     inline void mu_sig(double nor,double &mu,double &sig) {
         mu=fmom*nor;
-        sig=sqrt(smom*nor-mu*mu);
+        double sig2=smom*nor-mu*mu;
+        sig=sig2>0?sqrt(sig2):0;
     }
     /** Updates the statistics to account for a given value.
      * \param[in] x the value. */
