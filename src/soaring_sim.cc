@@ -67,7 +67,7 @@ soaring_sim::soaring_sim(const char* filename) : fileinfo(filename),
                    :(kernel_func*) new kernel_rt(nx,lx,w_Cinv,gpr_rs,gpr_ts,rmax,tmax*pad);
 #pragma omp parallel for
         for(int j=0;j<gpt;j++) mem[j]=new gpr(gprm,*KF,gpr_ker_tol,ker_step,gpr_full_compute);
-    }
+    } else if(wmodel==wm_full_cubic&&!default_cubic_a()) tf->set_cubic_a_param(cubic_a_param);
 
     // Allocate memory in the turbulent fluid class for performing simultaneous
     // velocity calculations for all of the gliders
@@ -215,8 +215,7 @@ void soaring_sim::simulate_gliders() {
     }
 }
 
-/** Updates the gliders' banking angles based on planning using MCTS.
- * \param[in] path_output whether to output the paths (if enabled). */
+/** Updates the gliders' banking angles based on planning using MCTS. */
 void soaring_sim::plan_mcts() {
 
     // Determine whether diagnostic routines for wind correlation or MCTS tree
@@ -323,7 +322,7 @@ float soaring_sim::base_score(glider &g_,int id) {
 /** Computes the score for an MCTS playout.
  * \param[in] g_ the glider state at the end of the playout
  * \param[in] id the glider ID number.
- * \param[in] bs the basline score at the start of the playout.
+ * \param[in] bs the baseline score at the start of the playout.
  * \return The score, computed at the change in glider energy from the start
  * until now. */
 float soaring_sim::score(glider &g_,int id,float bs) {
@@ -333,8 +332,7 @@ float soaring_sim::score(glider &g_,int id,float bs) {
 }
 
 /** Updates the gliders' banking angles based on the selected planning
- * strategy.
- * \param[in] path_output whether to output the MCTS paths (if enabled). */
+ * strategy. */
 void soaring_sim::plan() {
     if(ptype==pt_mcts) {
         if(wm_interpolation()) {

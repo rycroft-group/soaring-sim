@@ -22,7 +22,7 @@ FILE* safe_fopen(const char* filename,const char* mode) {
  *
  * Function for printing fatal error messages and exiting.
  * \param[in] p a pointer to the message to print.
- * \param[in] status the status code to return with. */
+ * \param[in] code the status code to return with. */
 void fatal_error(const char *p,int code) {
     fprintf(stderr,"Error: %s\n",p);
     exit(code);

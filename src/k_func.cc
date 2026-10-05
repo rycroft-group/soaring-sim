@@ -27,7 +27,7 @@ double kern_r_integrand(double x,void *params) {
  * \param[in] B_ The turbulent fluid box size.
  * \param[in] rs_ The size of the grid in the r direction.
  * \param[in] rmax_ The maximum extent of the interpolation in the r direction.
- * \param[in] bl_ The size of the interpolation grid. */
+ * \param[in] blsize The size of the interpolation grid. */
 kernel_func::kernel_func(int N_,double B_,int rs_,double rmax_,int blsize)
     : N(N_), rs(rs_), miss(0), rmax(rmax_), B(B_), kmin(sqrt(3)*M_PI/B),
     kmax(kmin*N), anor((2/3.)/(pow(kmin,(-2./3))-pow(kmax,(-2./3)))),
@@ -86,10 +86,8 @@ kernel_rt::kernel_rt(int N_,double B_,double Cinv_,int rs_,int ts_,double rmax_,
 /** Sets up the kernel evaluation function.
  * \param[in] N_ the number of turbulent fluid modes in one direction.
  * \param[in] B_ The turbulent fluid box size.
- * \param[in] C_ The turbulent fluid mode timescale.
- * \param[in] (rs_,ts_) The bilinear interpolation grid dimensions.
- * \param[in] (rmax_,tmax_) The maximum extent of the bilinear interpolation
- *                          grid. */
+ * \param[in] rs_ The linear interpolation grid dimension.
+ * \param[in] rmax_ The maximum extent of the linear interpolation grid. */
 kernel_r::kernel_r(int N_,double B_,int rs_,double rmax_)
     : kernel_func(N_,B_,rs_,rmax_,rs_) {
 

@@ -31,8 +31,8 @@ int main(int argc,char **argv) {
     if(argc<3||argc>4) {
         fputs("./climb_rate <input_file> <t_lo> [<t_hi>]\n\n"
               "Calculates the climb rate of individual gliders based on the trajectory\n"
-              "data over a time interval t_lo<=t<=t_hi. If t_hi is omitted, the"
-              "calculation is performed for t>=t_hi",stderr);
+              "data over a time interval t_lo<=t<=t_hi. If t_hi is omitted, the\n"
+              "calculation is performed for t>=t_hi\n",stderr);
         return 1;
     }
 

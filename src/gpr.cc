@@ -1,5 +1,4 @@
 #include "gpr.hh"
-#include "lp_solve.hh"
 #include "common.hh"
 
 #include <iostream>
@@ -55,7 +54,7 @@ gpr::~gpr() {
 /** Adds a wind measurement to the Gaussian process regression.
  * \param[in] (x,y,z) the position of the measurement.
  * \param[in] t the time of the measurement.
- * \param[in] (wx,wy,wz) the measured wind vector.*/
+ * \param[in] (wx,wy,wz) the measured wind vector. */
 void gpr::add_measurement(double x,double y,double z,double t,double wx,double wy,double wz) {
 
     /// Store the measurement position/time and the wind information
@@ -103,7 +102,7 @@ void gpr::compute_X() {
  * kernel calculations ready for performing predictions.
  * \param[in] (x,y,z) the position of the measurement.
  * \param[in] t the time of the measurement.
- * \param[in] (wx,wy,wz) the measured wind vector.*/
+ * \param[in] (wx,wy,wz) the measured wind vector. */
 void gpr::update_measurement(double x,double y,double z,double t,double wx,double wy,double wz) {
     int n;
 
@@ -243,20 +242,32 @@ void gpr::print(double *Q) {
     }
 }
 
+/** Calculates the Frobenius norm between the sequentially updated inverse,
+ * and an inverse directly computed using LAPACK. The result is scaled by
+ * the matrix size to give a measure of the error per entry.
+ * \return The norm. */
 double gpr::checksum() {
     double *C=new double[mm];
     compute_inverse(C);
 
     double s=0;
-    for(int j=0;j<m;j++) for(int i=0;i<=j;i++) {
-        C[i+m*j]-=B[i+m*j];
-        s+=C[i+m*j]*C[i+m*j];
+    for(int j=0;j<m;j++) {
+        for(int i=0;i<j;i++) {
+            C[i+m*j]-=B[i+m*j];
+            s+=C[i+m*j]*C[i+m*j];
+        }
+        C[j+m*j]-=B[j+m*j];
+        s+=0.5*C[j+m*j]*C[j+m*j];
     }
 
     delete [] C;
-    return 2.*s/(m*(m+1));
+    return sqrt(2.*s/(m*m));
 }
 
+/** Outputs diagnostics about the accuracy of the inverse kernel matrix
+ * compared to a direct computation, as well as statistics on how often
+ * different parts of the sequential update routine have been called.
+ * \param[in] fp the file handle to write to. */
 void gpr::diagnostics(FILE *fp) {
     fprintf(fp,"%.14g %ld %ld %ld %ld\n",checksum(),*co,co[1],co[2],co[3]);
     *co=co[1]=co[2]=co[3]=0;

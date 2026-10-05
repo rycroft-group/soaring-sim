@@ -54,7 +54,8 @@ void glider_model::euler(int n,double dt,glider *p,double *w) {
  * \param[in] dt the timestep to use.
  * \param[in,out] p the glider position and velocity to update.
  * \param[in] q the results of the first RK step.
- * \param[in,out] r the glider position after applying q. */
+ * \param[in,out] r the glider position after applying q.
+ * \param[in] w the wind vector at the glider's position. */
 void glider_model::ie_step1(double dt,glider &p,glider &q,glider &r,double *w) {
     ff(p,q,w);
     r.euler(p,dt,q);
@@ -63,9 +64,9 @@ void glider_model::ie_step1(double dt,glider &p,glider &q,glider &r,double *w) {
 /** Updates an array of gliders using the improved Euler method.
  * \param[in] n the length of the array.
  * \param[in] dt the timestep to use.
- * \param[i]] p the array of glider positions and velocities to update.
- * \param[in] q an array of the results of the first RK step.
- * \param[in] r an array of the glider states after applying q.
+ * \param[in] p the array of glider positions and velocities to update.
+ * \param[in,out] g_ie an array of the results of the first RK step, and the
+ *                glider states after applying q.
  * \param[in] w the wind vector at the glider's position. */
 void glider_model::ie_step1(int n,double dt,glider *p,glider *g_ie,double *w) {
     for(int i=0;i<n;i++) {
@@ -140,6 +141,7 @@ double glider_model::max_timestep() {
 }
 
 /** Applies a random move to the glider bank angle.
+ * \param[in] p the glider to apply the move to.
  * \param[in] rng a pointer to the GSL random number generator to use. */
 void glider_model::random_move(glider &p,gsl_rng* rng) {
     int e=p.bank+bc_min+gsl_rng_uniform_int(rng,ctot);

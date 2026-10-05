@@ -26,7 +26,7 @@ struct glider {
     glider() {}
     /** Creates the glider class, copying the position, velocity, and banking
      * angle from another.
-     * \param[in] p the glider glass to copy from. */
+     * \param[in] p the glider class to copy from. */
     glider(glider &p) : rx(p.rx), ry(p.ry), rz(p.rz), ux(p.ux), uy(p.uy), uz(p.uz), bank(p.bank) {}
     /** Creates the glider class, initializing the members as a forward Euler step
      * from two others.
@@ -36,7 +36,7 @@ struct glider {
     glider(glider &p,double dt,glider &q) : rx(p.rx+dt*q.rx), ry(p.ry+dt*q.ry),
         rz(p.rz+dt*q.rz), ux(p.ux+dt*q.ux), uy(p.uy+dt*q.uy), uz(p.uz+dt*q.uz), bank(p.bank) {}
     /** Initializes the members of the glider class.
-     * \param[in] (rx_,ry_,rz_) the glider positon.
+     * \param[in] (rx_,ry_,rz_) the glider position.
      * \param[in] (ux_,uy_,uz_) the glider velocity.
      * \param[in] bank_ the banking angle step. */
     inline void init(double rx_,double ry_,double rz_,double ux_,double uy_,double uz_,short bank_) {
@@ -97,25 +97,34 @@ struct glider {
         uz+=hdt*(q.uz+r.uz);
     }
     /** Copies the glider position to a given memory location.
-     * \param[in] p a pointer to the memory location to copy to. */
+     * \param[out] p a pointer to the memory location to copy to. */
     inline void copy_pos(double *p) {
         *p=rx;
         p[1]=ry;
         p[2]=rz;
     }
     /** Copies the glider velocity to a given memory location.
-     * \param[in] p a pointer to the memory location to copy to. */
+     * \param[out] p a pointer to the memory location to copy to. */
     inline void copy_vel(double *p) {
         *p=ux;
         p[1]=uy;
         p[2]=uz;
     }
+    /** Outputs the current time, glider position, glider velocity,
+     * and glider bank angle to an open file.
+     * \param[in] fp the file handle to write to. */
     inline void output(double time,FILE *fp) {
         fprintf(fp,"%g %g %g %g %g %g %g %d\n",time,rx,ry,rz,ux,uy,uz,bank);
     }
+    /** Outputs the glider position and bank angle to an open file.
+     * \param[in] fp the file handle to write to. */
     inline void write_pos(FILE *fp) {
         fprintf(fp," %g %g %g %d",rx,ry,rz,bank);
     }
+    /** Outputs a minimal set of information (glider position and bank angle)
+     * in binary format to an open file. To save on space, the glider position
+     * is stored as single-precision floating point numbers.
+     * \param[in] fp the file handle to write to. */
     inline void write_min_binary(FILE *fp) {
 
         // Convert the glider position to single precision
@@ -126,6 +135,11 @@ struct glider {
         // Write the bank angle
         fwrite(&bank,sizeof(short),1,fp);
     }
+    /** Outputs the glider position, corresponding wind velocity, and glider
+     * bank angle in binary format to a file. To save on space, the glider
+     * position and the wind velocity are stored as single-precision floating
+     * point numbers.
+     * \param[in] w a pointer to the wind velocity vector. */
     inline void write_binary(FILE *fp,double *w) {
 
         // Convert the glider position to single precision
@@ -137,6 +151,9 @@ struct glider {
         // Write the bank angle
         fwrite(&bank,sizeof(short),1,fp);
     }
+    /** Calculates the energy of the glider, based on its height and its
+     * velocity relative to the wind.
+     * \param[in] w a pointer to the wind velocity vector. */
     inline double energy(double *w) {
         double vx=ux-*w,vy=uy-w[1],vz=uz-w[2];
         return 0.5*(vx*vx+vy*vy+vz*vz)+rz;
@@ -151,7 +168,7 @@ class glider_model {
         const double c_D;
         /** The 2-norm of the (lift,drag) vector. */
         const double s;
-        /** The steady-state horizonal velocity for straight flight with zero
+        /** The steady-state horizontal velocity for straight flight with zero
          * banking angle. */
         const double uh0;
         /** The steady-state vertical velocity for straight flight with zero

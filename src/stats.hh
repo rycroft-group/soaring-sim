@@ -60,8 +60,6 @@ struct mti_stats {
         ma=0;
     }
     /** Calculates the mean and standard deviation of the values.
-     * \param[in] nor a normalizing factor, equal to the reciprocal of the
-     *                number of values.
      * \param[out] mu the mean.
      * \param[out] sig the standard deviation. */
     inline void mu_sig(double &mu,double &sig) {

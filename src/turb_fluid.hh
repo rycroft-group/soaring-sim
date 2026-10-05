@@ -9,6 +9,7 @@
 #include <fftw3.h>
 
 #include "common.hh"
+#include "en_spec.hh"
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -31,6 +32,8 @@ class turb_fluid {
         const int mn;
         /** The total number of gridpoints. */
         const int mno;
+        /** The memory displacement in a z-slice of the mode array. */
+        const unsigned long mslice;
         /** The lower bound of the domain the x direction. */
         const double ax;
         /** The upper bound of the domain the x direction. */
@@ -57,7 +60,7 @@ class turb_fluid {
         const double facz;
         /** The reciprocal of the constant so that timescales of modes go like C*k^{-2/3}. */
         const double Cinv;
-        /** The constant so that energy scales like E(k)=alpha*k^{-5/3}. */
+        /** The mode spectrum prefactor. */
         const double alpha;
         /** The normalizing constant setting the overall scale of the Fourier
          * modes for velocity. */
@@ -72,7 +75,7 @@ class turb_fluid {
         void mean_revert(double T);
         inline void step_forward(double dt) {update_random<0>(dt);}
         inline void init_steady_state() {update_random<1>(0.);}
-        void histogram(double *hi,int nbin,double &hmax);
+        double energy_spectrum(en_spec_param &es,en_spec_data *ed);
         double est_max_timestep();
         void vel(double x,double y,double z,double &ux,double &uy,double &uz);
         void vel_multi(int q,double *pos,double *vel);
@@ -96,6 +99,14 @@ class turb_fluid {
             FILE *fp=safe_fopen(filename,"wb");
             save(fp);
             fclose(fp);
+        }
+        /** Passes information about the range of wavenumbers in this class to an
+         * mode energy spectrum computation class.
+         * \param[in] es the class to pass the wavenumbers to. */
+        inline void setup_es_param(en_spec_param &es) {
+            es.init(facx<facy?(facz<facx?facz:facx):(facz<facy?facz:facy),
+                    pow(facx*facy*facz,1/3.),
+                    0.5*sqrt(sqr(facx*m)+sqr(facy*n)+sqr(facz*o)));
         }
     protected:
         /** Computes the square of a number.

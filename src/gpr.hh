@@ -15,19 +15,37 @@ struct measure_info {
     double x,y,z;
     /** The time of the measurement. */
     double t;
+    /** Determines whether a given position is close to this measurement
+     * position based on a supplied tolerance.
+     * \param[in] (x_,y_,z_) the position to compare to.
+     * \param[in] tol the tolerance to use in the comparison.
+     * \return True if the positions are within the tolerance in each
+     * coordinate, false otherwise. */
     inline bool close(double tol,double x_,double y_,double z_) {
         return fabs(x-x_)<tol&&fabs(y-y_)<tol&&fabs(z-z_)<tol;
     }
+    /** Sets the position and time for this measurement.
+     * \param[in] (x_,y_,z_) the position.
+     * \param[in] t_ the time. */
     inline void set(double x_,double y_,double z_,double t_) {
         x=x_;y=y_;z=z_;t=t_;
     }
+    /** Calculates the Euclidean distance squared between a given position and
+     * the measurement position.
+     * \param[in] (x_,y_,z_) the given position.
+     * \return The distance squared. */
     inline double dis_sq(double x_,double y_,double z_) {
         double dx=x-x_,dy=y-y_,dz=z-z_;
         return dx*dx+dy*dy+dz*dz;
     }
+    /** Nullifies this measurement by setting the measurement time to a special
+     * value. */
     inline void nullify() {
         t=gpr_invalid_t;
     }
+    /** Checks if this measurement has been made invalid by a previous
+     * nullify() call.
+     * \return True if invalid, false otherwise. */
     inline bool invalid() {
         return t==gpr_invalid_t;
     }
@@ -57,6 +75,10 @@ class gpr {
             v=0;full=false;
         }
         void add_measurement(double x,double y,double z,double t,double wx,double wy,double wz);
+        /** Adds a wind measurement to the Gaussian process regression.
+         * \param[in] pos the position of the measurement.
+         * \param[in] t the time of the measurement.
+         * \param[in] vel the measured wind vector. */
         inline void add_measurement(double *pos,double t,double *vel) {
             add_measurement(*pos,pos[1],pos[2],t,*vel,vel[1],vel[2]);
         }
@@ -69,6 +91,11 @@ class gpr {
             compute_X();
         }
         void update_measurement(double x,double y,double z,double t,double wx,double wy,double wz);
+        /** Adds a wind measurement to the Gaussian process regression, and
+         * updates the kernel calculations ready for performing predictions.
+         * \param[in] pos the position of the measurement.
+         * \param[in] t the time of the measurement.
+         * \param[in] vel the measured wind vector. */
         inline void update_measurement(double *pos,double t,double *vel) {
             update_measurement(*pos,pos[1],pos[2],t,*vel,vel[1],vel[2]);
         }
@@ -76,12 +103,20 @@ class gpr {
         void print(double *Q);
         double checksum();
         void diagnostics(FILE *fp);
-        void print_times() {
+        /** Prints out a list of the measurement positions and time currently
+         * in use. */
+        void print_measurements() {
             for(int i=0;i<(full?m:v);i++) printf("%d %g %g %g %g\n",i,M[i].x,M[i].y,M[i].z,M[i].t);
         }
    private:
+        /** Computes the minimum distance from a given position to
+         * any previously stored measurement position.
+         * \param[in] (x,y,z) the given position.
+         * \return The minimum distance. In the case when no measurements are
+         * available, this is set to the maximum valid double-precision
+         * floating point number. */
         inline double min_dis(double x,double y,double z) {
-            double minq=1e10,q;
+            double minq=std::numeric_limits<double>::max(),q;
             int n=full?m:v;
             for(int i=0;i<n;i++) {
                 q=M[i].dis_sq(x,y,z);

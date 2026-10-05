@@ -11,19 +11,21 @@
 #endif
 
 /** Initializes the three-dimensional turbulent fluid generator.
- * \param[in] (m,n,o) the dimensions of the grid.
+ * \param[in] (m_,n_,o_) the dimensions of the grid.
  * \param[in] (ax_,bx_) the lower and upper x-coordinate simulation bounds.
  * \param[in] (ay_,by_) the lower and upper y-coordinate simulation bounds.
  * \param[in] (az_,bz_) the lower and upper z-coordinate simulation bounds.
  * \param[in] Cinv_ the reciprocal of the constant controlling mode timescales.
- * \param[in] alpha_ the constant controlling mode energy scales. */
+ * \param[in] alpha_ the constant controlling mode energy scales.
+ * \param[in] seed a base seed for initializing the GSL random number
+ *                 generators. */
 turb_fluid::turb_fluid(int m_,int n_,int o_,double ax_,double bx_,double ay_,double by_,double az_,double bz_,double Cinv_,double alpha_,unsigned long seed)
-    : m(m_), n(n_), o(o_), fftm((m>>1)+1), mn(m*n), mno(mn*o), ax(ax_),
-    bx(bx_), ay(ay_), by(by_), az(az_), bz(bz_), dx((bx-ax)/m), dy((by-ay)/n),
-    dz((bz-az)/o), facx(2*M_PI/(bx-ax)),
+    : m(m_), n(n_), o(o_), fftm((m>>1)+1), mn(m*n), mno(mn*o),
+    mslice(3*fftm*n), ax(ax_), bx(bx_), ay(ay_), by(by_), az(az_), bz(bz_),
+    dx((bx-ax)/m), dy((by-ay)/n), dz((bz-az)/o), facx(2*M_PI/(bx-ax)),
     facy(2*M_PI/(by-ay)), facz(2*M_PI/(bz-az)), Cinv(Cinv_), alpha(alpha_),
     fnor(sqrt(1./(48*M_PI)*alpha*facx*facy*facz)),
-    kk((fftw_complex*)fftw_malloc(sizeof(fftw_complex)*3*fftm*n*o)),
+    kk((fftw_complex*)fftw_malloc(sizeof(fftw_complex)*mslice*o)),
     htab(new double[2*(fftm+n)+1]), ftab(htab+1), fslots(1),
 #ifdef _OPENMP
     nt(omp_get_max_threads()),
@@ -55,7 +57,7 @@ turb_fluid::~turb_fluid() {
 
 /** Initializes all of the Fourier modes to be zero. */
 void turb_fluid::init_zero() {
-    for(int i=0;i<3*fftm*n*o;i++) kk[i][0]=kk[i][1]=0;
+    for(unsigned long i=0;i<mslice*o;i++) kk[i][0]=kk[i][1]=0;
 }
 
 /** Evaluates the velocity at a given position.
@@ -93,7 +95,7 @@ void turb_fluid::vel(double x,double y,double z,double &ux,double &uy,double &uz
 #pragma omp parallel for reduction(+:ux) reduction(+:uy) reduction(+:uz)
     for(int k=0;k<o;k++) {
         int uk=k>o/2?k-o:k;
-        fftw_complex *kp=kk+3*n*fftm*k;
+        fftw_complex *kp=kk+mslice*k;
         double sx=0,jx=0,sy=0,jy=0,sz=0,jz=0;
         for(double *yp=ytab;yp<ytab+2*n;yp+=2) {
             double rx=0,ix=0,ry=0,iy=0,rz=0,iz=0;
@@ -124,7 +126,7 @@ void turb_fluid::vel(double x,double y,double z,double &ux,double &uy,double &uz
  * the number of table slots is greater or equal to the number of positions.
  * \param[in] q the number of positions.
  * \param[in] pos a pointer to the positions.
- * \param[in] vel a pointer to the velocities. */
+ * \param[out] vel a pointer to the velocities. */
 void turb_fluid::vel_multi(int q,double *pos,double *vel) {
     fourier_table(q,pos);
 
@@ -137,7 +139,7 @@ void turb_fluid::vel_multi(int q,double *pos,double *vel) {
 #pragma omp for
         for(int k=0;k<o;k++) {
             int uk=k>o/2?k-o:k;
-            fftw_complex *kp=kk+3*n*fftm*k;
+            fftw_complex *kp=kk+mslice*k;
             double *yp=ftab+2*fftm*q;
             for(int l=0;l<6*q;l++) s[l]=0;
             for(int j=0;j<n;j++) {
@@ -159,12 +161,16 @@ void turb_fluid::vel_multi(int q,double *pos,double *vel) {
     }
 }
 
-/** Evaluates the velocity at multiple positions. This function assumes that
- * the function allocate_vel_table has been called beforehand, to ensure that
- * the number of table slots is greater or equal to the number of positions.
+/** Evaluates the velocity at multiple positions, and rate-of-change in
+ * velocity along trajectories from those positions. This function assumes that
+ * the function allocate_vel_table has been called beforehand with
+ * extended=true option, to ensure that the number of table slots is greater or
+ * equal to the number of positions.
  * \param[in] q the number of positions.
  * \param[in] pos a pointer to the positions.
- * \param[in] vel a pointer to the velocities. */
+ * \param[in] dir a pointer to the travel velocity at the given positions.
+ * \param[out] vel a pointer to the velocities.
+ * \param[out] dvel a pointer to the expected change in velocities. */
 void turb_fluid::vel_dot_multi(int q,double *pos,double *dir,double *vel,double *dvel) {
     fourier_table(q,pos);
 
@@ -177,7 +183,7 @@ void turb_fluid::vel_dot_multi(int q,double *pos,double *dir,double *vel,double 
 #pragma omp for
         for(int k=0;k<o;k++) {
             int uk=k>o/2?k-o:k;
-            fftw_complex *kp=kk+3*n*fftm*k;
+            fftw_complex *kp=kk+mslice*k;
             double *yp=ftab+2*fftm*q,kz=facz*uk,w=kz*kz;
             for(int l=0;l<12*q;l++) s[l]=0;
             for(int j=0;j<n;j++) {
@@ -217,6 +223,10 @@ void turb_fluid::vel_dot_multi(int q,double *pos,double *dir,double *vel,double 
     }
 }
 
+/** Calculates a table of Fourier modes evaluated at a given list of sample
+ * positions.
+ * \param[in] q the number of positions to consider.
+ * \param[in] pos the array of sample positions, stored as (x,y,z) triplets. */
 void turb_fluid::fourier_table(int q,double *pos) {
 
     // Assemble the table of Fourier coefficients in the x direction,
@@ -274,15 +284,11 @@ void turb_fluid::update_random(double dt) {
         // Loop over all of the Fourier modes
 #pragma omp for
         for(int k=0;k<o;k++) {
-            fftw_complex *kp=kk+3*n*fftm*k;
+            fftw_complex *kp=kk+mslice*k;
             double w=sqr(facz*(k>o/2?k-o:k));
             for(int j=0;j<n;j++) {
                 double ww=w+sqr(facy*(j>n/2?j-n:j));
                 for(int i=0;i<fftm;i++,kp+=3) {
-
-                    // Diagnostic line to check on the (0,0,0) mode
-                    //if(i==0&&j==0&&k==0)
-                    //    printf("%g %g %g %g %g %g\n",kp[0][0],kp[0][1],kp[1][0],kp[2][1],kp[2][0],kp[2][1]);
 
                     // Calculate the scale factor to apply to this mode. Skip
                     // if this mode is not used.
@@ -324,11 +330,8 @@ void turb_fluid::update_random(double dt) {
     }
 }
 
-/** Perform a stochastic update to the Fourier modes. If mode=0, then the
- * Ornstein-Uhlenbeck equations at each mode are updated. If mode=1, then the
- * Fourier modes are initialized in steady state.
- * \param[in] dt the timestep to use for the stochastic update. This is ignored
- *               if mode=1.*/
+/* Computes the mean RMS wind speed.
+ * \return The RMS wind speed. */
 double turb_fluid::mean_rms() {
     double s=0;
 #pragma omp parallel for reduction(+:s)
@@ -352,7 +355,7 @@ void turb_fluid::mean_revert(double T) {
     // Loop over all of the Fourier modes
 #pragma omp for
     for(int k=0;k<o;k++) {
-        fftw_complex *kp=kk+3*n*fftm*k;
+        fftw_complex *kp=kk+mslice*k;
         double w=sqr(facz*(k>o/2?k-o:k));
         for(int j=0;j<n;j++) {
             double ww=w+sqr(facy*(j>n/2?j-n:j));
@@ -379,46 +382,39 @@ void turb_fluid::mean_revert(double T) {
     }
 }
 
-/** Computes a histogram of the energy as a function of the wave number
- * magnitude.
- * \param[in] hi a pointer in which to store the histogram.
- * \param[in] nbin the number of bins of the histogram.
- * \param[out] hmax the maximum wave number magnitude, setting the upper range
- *                  of the histogram bins. */
-void turb_fluid::histogram(double *hi,int nbin,double &hmax) {
+/** Computes the energy spectrum E(k) as a function of the wavenumber.
+ * \param[in] es a reference to the energy spectrum computation class.
+ * \param[out] ed the array to write the energy spectrum data to.
+ * \return The integral of the energy function. */
+double turb_fluid::energy_spectrum(en_spec_param &es,en_spec_data *ed) {
 
-    // Compute the maximum wave number magnitude and the normalizing
-    // factor for binning the contributions. Clear the histogram bins.
-    hmax=sqrt(sqr(facx*0.5*m)+sqr(facy*0.5*n)+sqr(facz*0.5*o));
-    double dsp=nbin/hmax;
-    for(int i=0;i<nbin;i++) hi[i]=0;
+    // Set all of the bin counters to zero in the energy spectrum
+    es.clear(ed);
 
     // Loop over the Fourier modes
 #pragma omp parallel for
     for(int k=0;k<o;k++) {
-        fftw_complex *kp=kk+3*n*fftm*k;
+        fftw_complex *kp=kk+mslice*k;
         double w=sqr(facz*(k>o/2?k-o:k));
         for(int j=0;j<n;j++) {
-            int ww=w+sqr(facy*(j>n/2?j-n:j));
+            double ww=w+sqr(facy*(j>n/2?j-n:j));
             for(int i=0;i<fftm;i++,kp+=3) {
 
                 // Calculate the scale factor to apply to this mode. Skip
                 // if this mode is not used.
                 int fm=f_mode(i,j,k);
+                double fac;
                 if(fm==0) continue;
+                else fac=fm==1?1:0.25;
 
                 // Bin the contribution from this Fourier mode
-                int b=static_cast<int>(dsp*sqrt(ww+sqr(facx*i)));
-                if(b<0||b>=nbin) continue;
-                double c=(i>0&&2*i<m?4:1)*complex_msq(kp);
-#pragma omp atomic
-                hi[b]+=c;
+                es.bin(ed,sqrt(ww+sqr(facx*i)),fac*complex_msq(kp));
             }
         }
     }
 
-    // Normalize the histogram results
-    for(int i=0;i<nbin;i++) hi[i]*=dsp;
+    // Finalize the histogram data, and compute the integral of E(k)
+    return es.finalize(ed);
 }
 
 /** Compute the maximum timestep based on how fast the relaxation term in the
@@ -430,7 +426,9 @@ double turb_fluid::est_max_timestep() {
 
 /** Checks that the Fourier coefficient tables have a given number of slots,
  * and if not, extends them.
- * \param[in] slots the number of slots. */
+ * \param[in] slots the number of slots.
+ * \param[in] extended whether to allocated the extended table for performing
+ *                     expected rate-of-change computations as well. */
 void turb_fluid::allocate_vel_table(int slots,bool extended) {
     if(slots>fslots) {
         fslots=slots;
@@ -500,7 +498,8 @@ void turb_fluid::vel_stats_internal(double *up,int nsamp,double &ubar,double &vb
 }
 
 /** Creates a number of random samples of velocity.
- * \param[in] samp an array in which to store the sample positions and velocities. */
+ * \param[out] samp an array in which to store the sample positions and velocities.
+ * \param[in] nsamp the number of sample positions. */
 void turb_fluid::correl_init(double *samp,int nsamp) {
 
     // Create the random sample points
@@ -510,9 +509,6 @@ void turb_fluid::correl_init(double *samp,int nsamp) {
 
 #pragma omp for
         for(double *sp=samp;sp<samp+3*nsamp;sp+=3) {
-            //*sp=dx*gsl_rng_uniform_int(r,m);
-            //sp[1]=dy*gsl_rng_uniform_int(r,n);
-            //sp[2]=dz*gsl_rng_uniform_int(r,o);
             *sp=gsl_ran_flat(r,ax,bx);
             sp[1]=gsl_ran_flat(r,ay,by);
             sp[2]=gsl_ran_flat(r,az,bz);
@@ -525,14 +521,14 @@ void turb_fluid::correl_init(double *samp,int nsamp) {
 }
 
 /** Computes the correlation function.
- * \param[in] w an array for storing the correlation function.
+ * \param[out] w an array for storing the correlation function.
  * \param[in] nbin the number of bins for the correlation function.
  * \param[in] mrad the maximum separation to calculate the correlation function to.
  * \param[in] samp an array of sample positions and velocities at a previous
  *                 (or current) time.
  * \param[in] nsamp the number of samples of velocity to do in each bin. */
 void turb_fluid::correl_function(double *w,int nbin,double mrad,double *samp,int nsamp) {
-    double h=mrad/(nbin-1),*samp2=new double[6*nsamp],
+    double h=mrad/nbin,*samp2=new double[6*nsamp],
            *svel=samp+3*nsamp,*svel2=samp2+3*nsamp;
 
     for(int i=0;i<nbin;i++) {
@@ -586,7 +582,7 @@ void turb_fluid::save(FILE *fp) {
     fwrite(&Cinv,sizeof(double),2,fp);
 
     // Write the mode information
-    fwrite(kk,sizeof(fftw_complex),3*fftm*n*o,fp);
+    fwrite(kk,sizeof(fftw_complex),mslice*o,fp);
 }
 
 // Explicit instantiation

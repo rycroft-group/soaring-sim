@@ -23,7 +23,7 @@ class soaring_sim : public fileinfo {
          * search. It is equal to the minimum of the total threads available,
          * and the total number of gliders. */
         const int mctst;
-        /** The current fluid simulation number, used to set snpashot output
+        /** The current fluid simulation number, used to set snapshot output
          * filenames. */
         int fsim;
         /** The current time. */
@@ -53,6 +53,18 @@ class soaring_sim : public fileinfo {
         void simulate_gliders();
         void plan();
         void plan_mcts();
+        /** Takes a given glider position and integrates it forward over one
+         * control duration with a given move. This routine calls to two
+         * different routines depending on whether detailed diagnostics are
+         * enabled. If they aren't, a streamlined version of the routine is
+         * called. If they are, a slower version is called that also computes
+         * the required diagnostics.
+         * \param[in,out] g_ the glider to update.
+         * \param[in] id the ID number of the glider.
+         * \param[in] step the step number of the play, used to calculate the current
+         *                 time for predicting the wind field.
+         * \param[in] action the action to apply to the glider.
+         * \param[in] diag whether diagnostics are required. */
         inline void play(glider &g_,int id,int step,short action,bool diag) {
             diag?play_internal<true>(g_,id,step,action)
                 :play_internal<false>(g_,id,step,action);
@@ -98,7 +110,7 @@ class soaring_sim : public fileinfo {
         }
         /** Predicts the wind field at a given glider position, using the
          * currently selected prediction model.
-         * \param[in] t_ the time into the future for prediction.
+         * \param[in] t the time into the future for prediction.
          * \param[in] id the ID of this glider.
          * \param[in] g_ the glider state.
          * \param[in] w a pointer to array for writing the predicted wind
@@ -109,6 +121,10 @@ class soaring_sim : public fileinfo {
                 case wm_full_linear:
                     bypass_mr||frozen()?tf->lin_interp(g_.rx,g_.ry,g_.rz,*w,w[1],w[2])
                           :((turb_fluid_grid_mr*)tf)->lin_interp_mr(t,g_.rx,g_.ry,g_.rz,*w,w[1],w[2]);
+                    break;
+                case wm_full_lanczos2:
+                    bypass_mr||frozen()?tf->la2_interp(g_.rx,g_.ry,g_.rz,*w,w[1],w[2])
+                          :((turb_fluid_grid_mr*)tf)->la2_interp_mr(t,g_.rx,g_.ry,g_.rz,*w,w[1],w[2]);
                     break;
                 case wm_full_cubic:
                     bypass_mr||frozen()?tf->cub_interp(g_.rx,g_.ry,g_.rz,*w,w[1],w[2])
@@ -129,7 +145,7 @@ class soaring_sim : public fileinfo {
         template<bool diag>
         void play_internal(glider &g_,int id,int step,short action);
         /** A flag indicating whether the glider velocity array is up to date
-         * (in the 1 bit) and whether the grid-based wind fieled is up to date
+         * (in the 1 bit) and whether the grid-based wind field is up to date
          * (in the 2 bit). */
         unsigned int flag_current;
         /** An array for holding the current glider positions, used to compute

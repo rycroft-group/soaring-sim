@@ -7,14 +7,16 @@
 /** Initializes the three-dimensional turbulent fluid generator with additional
  * FFTW-based routines for evaluating the expected fluid velocity on a grid at
  * some time interval in the future, using Hermite interpolation.
- * \param[in] (m,n,o) the dimensions of the grid.
+ * \param[in] (m_,n_,o_) the dimensions of the grid.
  * \param[in] (ax_,bx_) the lower and upper x-coordinate simulation bounds.
  * \param[in] (ay_,by_) the lower and upper y-coordinate simulation bounds.
  * \param[in] (az_,bz_) the lower and upper z-coordinate simulation bounds.
- * \param[in] C_ the constant controlling mode timescales.
+ * \param[in] Cinv_ the reciprocal of the constant controlling mode timescales.
  * \param[in] alpha_ the constant controlling mode energy scales.
  * \param[in] h_segs_ the number of segments to divide the time interval into.
- * \param[in] Tmr_ the duration of the time interval. */
+ * \param[in] Tmr_ the duration of the time interval.
+ * \param[in] seed a base seed for initializing the GSL random number
+ *                 generators. */
 turb_fluid_grid_mr::turb_fluid_grid_mr(int m_,int n_,int o_,double ax_,double bx_,double ay_,double by_,double az_,double bz_,double Cinv_,double alpha_,int h_segs_,double Tmr_,unsigned long seed)
     : turb_fluid_grid(m_,n_,o_,ax_,bx_,ay_,by_,az_,bz_,Cinv_,alpha_,seed), h_segs(h_segs_),
     Tmr(Tmr_), rho(Tmr/(h_segs*h_segs)), irho(1./rho), umr(new double*[2*h_segs+1]) {
@@ -135,13 +137,15 @@ void turb_fluid_grid_mr::lin_interp_mr(double T,double x,double y,double z,doubl
     }
 }
 
-/** Evaluates the expected fluid velocity on the grid at a later point in time.
- * The routine used tricubic interpolation in space and Hermite interpolation
- * in time.
+/** Evaluates the expected fluid velocity at a given position and time. The
+ * routine uses a four-point interpolation scheme in space and Hermite
+ * interpolation in time.
+ * \param[in] cub true for spatial tricubic interpolation, false for spatial
+ *                Lanczos2 interpolation.
  * \param[in] T the time to consider.
  * \param[in] (x,y,z) the position at which to interpolate.
  * \param[out] (ux,uy,uz) the velocity vector. */
-void turb_fluid_grid_mr::cub_interp_mr(double T,double x,double y,double z,double &ux,double &uy,double &uz) {
+void turb_fluid_grid_mr::four_pt_interp_mr(bool cub,double T,double x,double y,double z,double &ux,double &uy,double &uz) {
 
     // Determine which box of the fluid grid that the point is within
     int i,j,k;
@@ -159,9 +163,9 @@ void turb_fluid_grid_mr::cub_interp_mr(double T,double x,double y,double z,doubl
     // account for the periodicity of the domain.
     double s[12];
     int q[12],dis=3*(i+m*(j+n*k));
-    bic_basis(x,i,m,s,q,3);
-    bic_basis(y,j,n,s+4,q+4,3*m);
-    bic_basis(z,k,o,s+8,q+8,3*m*n);
+    cub?setup_cubic_basis(x,y,z,s)
+       :setup_lanczos2_basis(x,y,z,s);
+    setup_memory_strides(i,j,k,q);
 
     // Calculate the interpolant, looping over the four Hermite basis
     // functions

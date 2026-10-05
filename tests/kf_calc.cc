@@ -20,6 +20,6 @@ int main(int argc,char **argv) {
     kernel_rt KF(64,50,1,100,100,rmax,duration*(ins-1));
     kernel_r KFr(64,50,100,rmax);
 
-    KF.output_table("KF");
-    KFr.output_table("KFr");
+    KF.output_table("KF.dat");
+    KFr.output_table("KFr.dat");
 }

@@ -3,10 +3,10 @@
 /** Performs a Monte Carlo tree search (MCTS) by simulating a number of
  * playouts, taking random actions that are biased toward more promising
  * outcomes.
- * \param[in] game a reference to game class for simulating the game state, and
- *                 evaluating scores and valid moves.
- * \param[in] state a reference to a class containing the current, complete
- *                  game state.
+ * \param[in] ga a reference to game class for simulating the game state, and
+ *               evaluating scores and valid moves.
+ * \param[in] st a reference to a class containing the current, complete game
+ *               state.
  * \param[in] id the numerical ID of this particular game state.
  * \param[in] num the total number of playouts to simulate. */
 template<bool diag,class game,class state>

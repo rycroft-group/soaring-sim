@@ -6,16 +6,28 @@
 #include "tf_grid.hh"
 
 // The total number of frames
-const int nframes=50000;
+const int nframes=2000;
 
-// The duration to integrate over
-const double duration=1000.;
+// The number of Fourier modes to use in the turbulent wind field
+const int nmode=64;
+
+// The side length of the cube for the turbulent wind field
+const double L=50;
+
+// Parameters controlling the wind field mode amplitude and temporal
+// fluctuations. (Based on tau_c=64 s, and 1 m/s RMS per component.)
+const double alpha=0.00913104,C=63.3783,Cinv=1/C;
+
+// The duration over which to simulate. Corresponds to 512 s.
+const double dur_phys=8000,
+             duration=dur_phys*0.9902853;
 
 // The padding factor to apply to the timestep
 const double dt_pad=0.2;
 
 int main() {
 
+    // Set up multi-threaded FFTW computations, if available
 #ifdef FFTW_OMP
     fftw_init_threads();
     fftw_plan_with_nthreads(omp_get_max_threads());
@@ -23,11 +35,7 @@ int main() {
 
     // Create the turbulence simulation, and initialize the velocity modes in
     // steady state
-    int nmode=32;
-    double time_scale=32.;
-    double alpha=M_PI*M_PI/(9.*(pow(sqrt(3.)*M_PI,-2/3.)-pow(sqrt(3.)*M_PI*nmode,-2/3.))),
-           C=pow(sqrt(3)*M_PI,2/3.)*time_scale;
-    turb_fluid_grid tf(nmode,nmode,nmode,0,50,0,50,0,50,C,alpha);
+    turb_fluid_grid tf(nmode,nmode,nmode,0,L,0,L,0,L,Cinv,alpha);
     double ubar,vbar,wbar,urms,vrms,wrms,srms=0,trms;
     tf.init_steady_state();
 
@@ -47,14 +55,10 @@ int main() {
 
     // Integrate the modes and output additional snapshots
     double t0=wtime(),t1,t2;
-    printf("%g\n",tf.mean_rms());
-  /*  tf.output_x("diagx",0,2);
-    tf.output_y("diagy",0,2);
-    tf.output_z("diagz",0,2);*/
     for(int k=1;k<=nframes;k++) {
 
         // Perform stochastic integration timesteps
-        for(int i=0;i<1;i++) tf.init_steady_state();
+        for(int i=0;i<l;i++) tf.step_forward(dt);
         t1=wtime();
 
         // Output a cross-section
@@ -67,9 +71,9 @@ int main() {
 
         // Print diagnostic information
         t2=wtime();
-        if(k%1000==0) printf("# Output frame %d [%d, %.4g s, %.4g s]\n",k,l,t1-t0,t2-t1);
+        if(k%100==0) printf("# Output frame %d [%d, %.4g s, %.4g s]\n",k,l,t1-t0,t2-t1);
         t0=t2;
     }
     fclose(fp);
-    printf("Long term average: %g\n",srms/(nframes+1));
+    printf("# Long term average: %g\n",srms/(nframes+1));
 }

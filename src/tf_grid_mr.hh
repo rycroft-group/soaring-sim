@@ -20,7 +20,26 @@ class turb_fluid_grid_mr : public turb_fluid_grid {
         ~turb_fluid_grid_mr();
         void calc_mr_fields();
         void lin_interp_mr(double T,double x,double y,double z,double &ux,double &uy,double &uz);
-        void cub_interp_mr(double T,double x,double y,double z,double &ux,double &uy,double &uz);
+        /** Evaluates the expected fluid velocity at a given position and time.
+         * The routine uses a Lanczos2 interpolation scheme in space and
+         * Hermite interpolation in time.
+         * \param[in] T the time to consider.
+         * \param[in] (x,y,z) the position at which to interpolate.
+         * \param[out] (ux,uy,uz) the velocity vector. */
+        inline void la2_interp_mr(double T,double x,double y,double z,double &ux,double &uy,double &uz) {
+            four_pt_interp_mr(false,T,x,y,z,ux,uy,uz);
+        }
+        /** Evaluates the expected fluid velocity at a given position and time.
+         * The routine uses a tricubic interpolation scheme in space and
+         * Hermite interpolation in time.
+         * \param[in] T the time to consider.
+         * \param[in] (x,y,z) the position at which to interpolate.
+         * \param[out] (ux,uy,uz) the velocity vector. */
+        inline void cub_interp_mr(double T,double x,double y,double z,double &ux,double &uy,double &uz) {
+            four_pt_interp_mr(true,T,x,y,z,ux,uy,uz);
+        }
+    private:
+        void four_pt_interp_mr(bool cub,double T,double x,double y,double z,double &ux,double &uy,double &uz);
 };
 
 #endif

@@ -106,7 +106,8 @@ short mcts::pick_best() {
 
 /** Allocates memory for a leaf, including space for new branches for each
  * valid action.
- * \param[in] nact the number of valid actions at this leaf. */
+ * \param[in] nact the number of valid actions at this leaf.
+ * \param[in] v_act an array of the valid actions at the leaf. */
 void mcts::create_leaf(short nact,short* v_act) {
     if(s+nact>mem) add_tree_memory();
     for(short k=0;k<nact;k++) t[s+k].init(v_act[k]);

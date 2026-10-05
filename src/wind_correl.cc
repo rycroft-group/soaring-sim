@@ -14,7 +14,7 @@ void p_cor_coeff::diagnostic(const char* s,FILE *fp) {
     fprintf(fp,"%s %ld %g %g %g %g %g %g\n",s,n,ex,ey,sqrt(varx),sqrt(vary),cov,cov/sqrt(varx*vary));
 }
 
-/** Initializes the wind correlation computution class.
+/** Initializes the wind correlation computation class.
  * \param[in] n_mcts_ the number of MCTS samples.
  * \param[in] gpt_ the number of gliders per trial.
  * \param[in] tf_ a pointer to the turbulent fluid class. */
@@ -39,8 +39,7 @@ wind_correl::~wind_correl() {
 }
 
 /** Computes the wind at all of the glider locations encountered in MCTS, and
- * then compares them to the GPR predictions.
- * \param[in] time the current simulation time. */
+ * then compares them to the GPR predictions. */
 void wind_correl::wind_computation() {
 
     // Check that the expected number of measurements were taken

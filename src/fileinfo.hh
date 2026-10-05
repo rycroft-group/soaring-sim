@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 #include "common.hh"
@@ -18,12 +19,12 @@ const int fileinfo_fbuf_pad_size=256;
 
 /** The type of model used for predicting the wind field. */
 enum wind_model {
-    wm_unset, wm_gpr, wm_full_linear, wm_full_cubic
+    wm_unset, wm_gpr, wm_full_linear, wm_full_lanczos2, wm_full_cubic
 };
 
 /** The planning model type. */
 enum planning_type {
-    pt_unset, pt_zero, pt_random, pt_mcts
+    pt_unset, pt_random, pt_mcts
 };
 
 /** \brief A class for parsing the drop impact parameters from a text
@@ -112,6 +113,10 @@ class fileinfo {
         double tf_pad;
         /** The duration of a control step. */
         double c_dur;
+        /** The a parameter to use in tricubic interpolation of the wind field.
+         * If set to the largest valid double-precision number, then the
+         * default value will be used. */
+        double cubic_a_param;
         /** The simulation duration. */
         double duration;
         /** The time cutoff before which to take no measurements of wind
@@ -144,6 +149,7 @@ class fileinfo {
         }
         void select_timestep(bool verbose=false);
         void print_info(FILE *fp=stdout);
+        void calculate_wind_param(bool set_rms);
         /** Prints information about all of the constants stored within the
          * class.
          * \param[in] filename the name of the file to write to. */
@@ -155,10 +161,10 @@ class fileinfo {
     protected:
         /** Returns whether or not an interpolation method is used for wind
          * prediction.
-         * \return True if the linear or cubic interpolation method is used,
-         * flase otherwise. */
+         * \return True if the trilinear, Lanczos2, or cubic interpolation
+         * method is used, false otherwise. */
         inline bool wm_interpolation() {
-            return wmodel==wm_full_linear||wmodel==wm_full_cubic;
+            return wmodel==wm_full_linear||wmodel==wm_full_lanczos2||wmodel==wm_full_cubic;
         }
         /** Returns whether the wind field is frozen.
          * \return True if frozen, false otherwise. */
@@ -171,6 +177,13 @@ class fileinfo {
          * otherwise. */
         inline bool mr_pred_used() {
             return !frozen()&&wm_interpolation();
+        }
+        /** Returns whether to use the default value of the a parameter in
+         * tricubic interpolation.
+         * \return True if the default value should be used, false otherwise.
+         */
+        inline bool default_cubic_a() {
+            return cubic_a_param==std::numeric_limits<double>::max();
         }
         /** The integration timestep. */
         double dt;
@@ -193,7 +206,7 @@ class fileinfo {
         int out_freq;
     private:
         /** Finds the next token in a string and interprets it as a double
-         * precision floating point number. If none is availble, it gives an
+         * precision floating point number. If none is available, it gives an
          * error message.
          * \param[in] ln the current line number. */
         inline double next_double(int ln) {
@@ -236,13 +249,14 @@ class fileinfo {
         void check_invalid(double val,const char *p);
         void print_range(FILE *fp,int rmin,int rmax);
         inline double max_tf_timestep();
-        inline void calculate_wind_param(bool set_rms);
+    private:
         inline double sqr(double x) {return x*x;}
         /** Returns a string describing the current wind model. */
         inline const char* s_wind_model() {
             switch(wmodel) {
                 case wm_gpr: return "GPR";
                 case wm_full_linear: return "Full info, linear";
+                case wm_full_lanczos2: return "Full info, Lanczos2";
                 case wm_full_cubic: return "Full info, cubic";
                 default: break;
             }
@@ -260,7 +274,6 @@ class fileinfo {
         /** Returns a string describing the current planning type. */
         inline const char* s_planning_type() {
             switch(ptype) {
-                case pt_zero: return "Zero";
                 case pt_random: return "Random";
                 case pt_mcts: return "MCTS";
                 default: break;

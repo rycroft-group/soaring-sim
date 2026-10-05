@@ -1,7 +1,6 @@
 #include "fileinfo.hh"
 
 #include <cmath>
-#include <limits>
 
 /** The class constructor reads parameters from an input file, converts some
  * physical units into simulation units, and performs a number of consistency
@@ -13,7 +12,8 @@ fileinfo::fileinfo(const char* infile) : num_trials(-1), gpt(-1), nx(-1),
     gpr_full_compute(false), fflags(0), base_seed(1), l_phys(-1), t_phys(-1),
     v_phys(-1), g_phys(-1), nu_phys(-1), lx(-1), ly(-1), lz(-1), w_Cinv(-1),
     w_alpha(-1), w_rms(-1), gpr_dist_pad(-1), gpr_ker_tol(0), c_dur(-1),
-    duration(-1), wmodel(wm_unset), itype(it_unset), ptype(pt_unset) {
+    cubic_a_param(std::numeric_limits<double>::max()), duration(-1),
+    wmodel(wm_unset), itype(it_unset), ptype(pt_unset) {
     int br_min=1,br_max=0,bc_min=1,bc_max=0;
     double bstep=-1,c_D=-1,c_L=-1,c_dur_phys=-1,w_rms_phys=-1,
            wic_tcut_phys=-1,mti_tcut_phys=-1,w_Cinv_phys=-1,duration_phys=-1;
@@ -155,11 +155,20 @@ fileinfo::fileinfo(const char* infile) : num_trials(-1), gpt(-1), nx(-1),
         else if(se(bp,"duration_phys")) duration_phys=final_double(ln);
         else if(se(bp,"wind_model")) {
             bp=next_token(ln);
-            if(se(bp,"gpr")) wmodel=wm_gpr;
-            else if(se(bp,"full_linear")) wmodel=wm_full_linear;
-            else if(se(bp,"full_cubic")) wmodel=wm_full_cubic;
-            else fatal_error("Wind model type not understood\n",1);
-            check_no_more(ln);
+            if(se(bp,"full_cubic")) {
+                wmodel=wm_full_cubic;
+                bp=strtok(NULL," \t\n");
+                if(bp!=NULL) {
+                    cubic_a_param=atof(bp);
+                    check_no_more(ln);
+                }
+            } else {
+                if(se(bp,"gpr")) wmodel=wm_gpr;
+                else if(se(bp,"full_linear")) wmodel=wm_full_linear;
+                else if(se(bp,"full_lanczos2")) wmodel=wm_full_lanczos2;
+                else fatal_error("Wind model type not understood\n",1);
+                check_no_more(ln);
+            }
         } else if(se(bp,"integration_type")) {
             bp=next_token(ln);
             if(se(bp,"euler")) itype=it_euler;
@@ -168,8 +177,7 @@ fileinfo::fileinfo(const char* infile) : num_trials(-1), gpt(-1), nx(-1),
             check_no_more(ln);
         } else if(se(bp,"planning")) {
             bp=next_token(ln);
-            if(se(bp,"zero")) ptype=pt_zero;
-            else if(se(bp,"random")) ptype=pt_random;
+            if(se(bp,"random")) ptype=pt_random;
             else if(se(bp,"mcts")) ptype=pt_mcts;
             else fatal_error("Planning type not understood\n",1);
             check_no_more(ln);
@@ -473,8 +481,12 @@ void fileinfo::print_info(FILE *fp) {
     // Print information about the wind prediction model
     fprintf(fp,"\n#\n# Wind prediction model\n"
                "# -----------------------\n"
-               "# Model type            : %s\n",
+               "# Model type            : %s",
                s_wind_model());
+    if(wmodel==wm_full_cubic) {
+        if(cubic_a_param==std::numeric_limits<double>::max()) fputs(" [default value of a]\n",fp);
+        else fprintf(fp," [a=%g]\n",cubic_a_param);
+    } else fputc('\n',fp);
 
     // Print extra parameters needed for the selected prediction model
     if(wmodel==wm_gpr) {
@@ -510,8 +522,8 @@ void fileinfo::print_info(FILE *fp) {
     if((fflags&240)==0) fputs(" [none]",fp);
     else {
         if(fflags&16) fputs(" glider_xyz",fp);
-        if(fflags&32) fputs(" glider_lb",fp);
-        if(fflags&64) fputs(" glider_fb",fp);
+        if(fflags&32) fputs(" glider_mb",fp);
+        if(fflags&64) fputs(" glider_lb",fp);
         if(fflags&128) fputs(" wind_modes",fp);
     }
 
@@ -546,7 +558,7 @@ void fileinfo::print_info(FILE *fp) {
 /** Prints a range of glider angles.
  * \param[in] fp the file handle to write to.
  * \param[in] (rmin,rmax) the integer range for the angles, which should be
- *                        multipled by the glider banking angle step size. */
+ *                        multiplied by the glider banking angle step size. */
 void fileinfo::print_range(FILE *fp,int rmin,int rmax) {
     for(int i=rmin;i<rmax;i++) fprintf(fp,"%g,",i*gm->bstep);
     fprintf(fp,"%g",rmax*gm->bstep);
@@ -561,7 +573,7 @@ void fileinfo::check_no_more(int ln) {
     }
 }
 
-/** Finds the next token in a string, and if none is availble, gives an error
+/** Finds the next token in a string, and if none is available, gives an error
  * message.
  * \param[in] ln the current line number. */
 char* fileinfo::next_token(int ln) {
@@ -585,7 +597,7 @@ void fileinfo::check_invalid(double val,const char *p) {
 
 /** Sets either the wind alpha parameter or the wind RMS in order to be consistent
  * with the other. */
-inline void fileinfo::calculate_wind_param(bool set_rms) {
+void fileinfo::calculate_wind_param(bool set_rms) {
     double s=0,facx=2*M_PI/lx,facy=2*M_PI/ly,facz=2*M_PI/lz;
 
 #pragma omp parallel for reduction(+:s)

@@ -6,7 +6,7 @@
 #include "tf_grid.hh"
 
 // The output directory to write to
-const char fn[]="ts2.odr";
+const char fn[]="twf.odr";
 
 // The number of modes in each direction
 const int nx=128,ny=128,nz=128;
@@ -28,6 +28,7 @@ inline int f_mode(int i,int j,int k) {
 
 int main() {
 
+    // Set up multi-threaded FFTW computations, if available
 #ifdef FFTW_OMP
     fftw_init_threads();
     fftw_plan_with_nthreads(omp_get_max_threads());

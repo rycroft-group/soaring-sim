@@ -13,10 +13,12 @@ const int filename_max_size=8192;
 const int gpt_max=131072;
 
 inline void syntax_message() {
-    fputs("./unpack [-w] <output_dir> <trial> <glider> <output_file>\n\n"
+    fputs("./unpack [-z] [-w] <output_dir> <trial> <glider> <output_file>\n\n"
           "The -w option outputs the wind velocity along the glider's\n"
           "trajectory. It requires that the larger binary file was saved\n"
-          "during the simulation.\n",stderr);
+          "during the simulation.\n\n"
+          "The -z option subtracts off the starting value of z for the glider\n"
+          "to show its altitude gain\n",stderr);
 }
 
 /** Checks whether a given file exists.
@@ -30,20 +32,21 @@ bool file_exists(char *fname) {
 int main(int argc,char **argv) {
 
     // Check for the correct number of command-line arguments
-    if(argc<5||argc>6) {
+    if(argc<5||argc>7) {
         syntax_message();
         return 1;
     }
 
     // Check for the wind flag
-    bool wind;
-    if(argc==6) {
-        if(strcmp(argv[1],"-w")!=0) {
+    bool wind=false,subtract_z=false;
+    for(int j=1;j<argc-4;j++) {
+        if(strcmp(argv[j],"-z")==0) subtract_z=true;
+        else if(strcmp(argv[1],"-w")==0) wind=true;
+        else {
             syntax_message();
             return 1;
         }
-        wind=true;
-    } else wind=false;
+    }
 
     // Allocate a temporary array for assembling the input filename
     int len=strlen(argv[argc-4]),trial=atoi(argv[argc-3]),gnum=atoi(argv[argc-2]),gpt,k=0;
@@ -93,11 +96,39 @@ int main(int argc,char **argv) {
     // Output the unpacked data
     bool std=strcmp(argv[argc-1],"-")==0;
     outf=std?stdout:safe_fopen(argv[argc-1],"w");
-    while(fread(ibuf,recf,1,fp)==1) {
-        wind?fprintf(outf,"%d %g %g %g %g %g %g %g %hd\n",
-                     k,out_dur*k,*f,f[1],f[2],f[3],f[4],f[5],*pbank)
-            :fprintf(outf,"%d %g %g %g %g %hd\n",k,out_dur*k,*f,f[1],f[2],*pbank);
+    if(subtract_z) {
+        const int prev=800;
+        char *istore=new char[rec*(prev+1)],*ip=istore;
+        for(;k<=prev;k++,ip+=rec) {
+            if(fread(ibuf,recf,1,fp)!=1) {
+                fputs("Not enough data\n",stderr);
+                return 1;
+            }
+            memcpy(ip,f,rec);
+        }
+        float *g=reinterpret_cast<float*>(istore+rec*prev),sz=g[2];
+        for(k=0;k<=prev;k++) {
+             g=reinterpret_cast<float*>(istore+rec*k);
+             short *pbank2=reinterpret_cast<short*>(g+b);
+             wind?fprintf(outf,"%d %g %g %g %g %g %g %g %hd\n",
+                          k,out_dur*k,*g,g[1],g[2]-sz,g[3],g[4],g[5],*pbank2)
+                 :fprintf(outf,"%d %g %g %g %g %hd\n",k,out_dur*k,*g,g[1],g[2]-sz,*pbank2);
+        }
         k++;
+        while(fread(ibuf,recf,1,fp)==1) {
+            wind?fprintf(outf,"%d %g %g %g %g %g %g %g %hd\n",
+                         k,out_dur*k,*f,f[1],f[2]-sz,f[3],f[4],f[5],*pbank)
+                :fprintf(outf,"%d %g %g %g %g %hd\n",k,out_dur*k,*f,f[1],f[2]-sz,*pbank);
+            k++;
+        }
+    } else {
+        while(fread(ibuf,recf,1,fp)==1) {
+            wind?fprintf(outf,"%d %g %g %g %g %g %g %g %hd\n",
+                         k,out_dur*k,*f,f[1],f[2],f[3],f[4],f[5],*pbank)
+                :fprintf(outf,"%d %g %g %g %g %hd\n",k,out_dur*k,*f,f[1],f[2],*pbank);
+            k++;
+        }
+
     }
 
     // Close any open files, and delete temporary memory

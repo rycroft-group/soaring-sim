@@ -1,4 +1,4 @@
-# Soaring-Sim:
+# Soaring-Sim: A simulation of gliders soaring in a turbulent wind model
 This repository contains a C++ code for simulating gliders that are soaring in
 turbulent wind field. The gliders measure the wind as they fly, and then
 control how they move in order to gain height. This code has been used to study
@@ -6,18 +6,18 @@ how gliders&#8212;such as birds, or mechanical gliders&#8212;can navigate in
 the atmosphere to most efficiently stay aloft. This code is associated with the
 following scientific publication:
 
-- Danyun He, Gautam Reddy, and Chris H. Rycroft, *Energy positive soaring using
+- Danyun He, Gautam Reddy, and Chris H. Rycroft, *Energy-positive soaring using
   transient turbulent fluctuations*,
 [arXiv:2304.05983](https://arxiv.org/abs/2304.05983) (2024).
 
 In particular, this publication shows that for realistic parameters, a glider
-in an idealized model of isotropic turbulunce can continually gain height and
+in an idealized model of isotropic turbulence can continually gain height and
 extract energy.
 
 ## Background
 Soaring birds harvest energy by strategically gliding through atmospheric
 flows. For soaring birds like herring gulls and albatrosses, gliding uses
-oxgyen at a rate 30% lower than flapping [1,2], which is important to make
+oxygen at a rate 30% lower than flapping [1,2], which is important to make
 long-distance migration feasible [3]. In the absence of wind a glider will
 continuously lose energy due to drag, and will sink at a constant rate.
 Therefore, to compensate for drag, gliders will (A) actively localize at
@@ -40,18 +40,18 @@ continuously. Later work demonstrated this strategy in the field [5].
 Atmospheric flows also contain short-lived turbulent eddies across a range of
 timescales. In this study, we asked whether it is possible for a glider
 to continuously gain energy using only these transient turbulent fluctuations,
-in a situation without any large scale flow features. To do this, we built a
+in a situation without any large scale flow features. To do this, we built an
 idealized model of an isotropic turbulent flow based on work by Fung *et al.*
-[6]. The three-dimensional wind field is modeled as a combination of
-stochastically evolving set of Fourier modes whose statistics match
-[Kolmogorov's theory of turbulence](https://en.wikipedia.org/wiki/Turbulence#Kolmogorov's_theory_of_1941).
+[6]. The three-dimensional wind field is modeled as a stochastically evolving
+set of Fourier modes whose statistics match [Kolmogorov's theory of
+turbulence](https://en.wikipedia.org/wiki/Turbulence#Kolmogorov's_theory_of_1941).
 
-We then built a aerodynamical model for a glider moving through this wind
+We then built an aerodynamic model for a glider moving through this wind
 field. We considered two different scenarios for how the glider interprets its
 surroundings: (A) it has complete information of the current state of the wind,
-or (B) it remembers the wind that it has encounted along its flight trajectory
-an estimates the state of the wind using [Gaussian process regression
-(GPR)](https://en.wikipedia.org/wiki/Kriging).
+or (B) it remembers the wind that it has encountered along its flight
+trajectory and estimates the state of the wind using [Gaussian process
+regression (GPR)](https://en.wikipedia.org/wiki/Kriging).
 
 To navigate through the flow, the glider can control its bank angle at regular
 intervals. The glider's planning strategy uses the [Monte Carlo tree search
@@ -69,13 +69,21 @@ initialized at random locations within the flow field and operate
 independently. The code can collect and save a wide range of data and
 statistics about each run.
 
+## Overview of the repository
+| Directory | Contents |
+| --- | --- |
+| [**src**](src/README.md) | Library source and main programs, with a description of the C++ classes |
+| [**tests**](tests/README.md) | Test and analysis programs, and how to run them |
+| [**config**](config/) | Build configuration templates |
+| [**sims**](sims/README.md) | Sample simulation configuration files |
+
 ## Compiling the code
 The code is written in C++ and uses the OpenMP library for multithreading. It
 has been tested on Linux, MacOS, and Windows via the [Windows Subsystem for
 Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install).
 The code depends on three open source software libraries:
 
-- The code makes use of [FFTW library](https://fftw.org) for efficient
+- The code makes use of the [FFTW library](https://fftw.org) for efficient
   computations of the fast Fourier transform.
 
 - The code uses the [GNU Scientific Library
@@ -85,7 +93,7 @@ The code depends on three open source software libraries:
 - The Gaussian process regression routines involve numerical linear algebra.
   This is handled using custom routines based on the
   [Woodbury formula](https://en.wikipedia.org/wiki/Woodbury_matrix_identity).
-  The code also makes use of [LAPACK](http://www.netlib.org/lapack/)
+  The code also makes use of [LAPACK](http://www.netlib.org/lapack/) for
   diagnostic purposes, but this dependency can be removed. LAPACK is often
   installed by default on many new operating systems.
 
@@ -94,20 +102,21 @@ systems, such as those available by default in Linux and in WSL. On the Mac,
 they are available via [MacPorts](https://www.macports.org) and
 [Homebrew](https://brew.sh).
 
-To compile the code, it is necessary to create a common configuration file called
-**config.mk** in the parent directory. Several templates are provided in the
-**config** directory. To use, copy one of the templates into the parent
-directory. From the **soaring-sim** directory, on a Linux computer, type
+To compile the code, it is necessary to create a common configuration file
+called **config.mk** in the top-level directory. Several templates are provided
+in the **config** directory. To use, copy one of the templates into the
+top-level directory. From the **soaring-sim** directory, on a Linux computer,
+type
 ```Shell
-cp config/config.mk.linux ../config.mk
+cp config/config.mk.linux config.mk
 ```
-On a Mac using GCC 14 installed via [MacPorts](http://www.macports.org), type
-```Shelli
-cp config/config.mk.mac_mp ../config.mk
+On a Mac using GCC 15 installed via [MacPorts](http://www.macports.org), type
+```Shell
+cp config/config.mk.mac_mp config.mk
 ```
 On a Mac using GCC installed via [Homebrew](http://brew.sh), type
 ```Shell
-cp config/config.mk.mac_hb ../config.mk
+cp config/config.mk.mac_hb config.mk
 ```
 After this, the code can be compiled by typing
 ```Shell
@@ -115,7 +124,7 @@ make
 ```
 This will build several executables such as **soar** and **unpack**.
 
-## Configuring and running a simulation
+## Running an example simulation
 The main program for running the glider soaring simulation is called **soar**.
 It requires a text file that contains the simulation configuration. Several
 samples are provided in the **sims** directory. A good place to begin is the
@@ -126,12 +135,16 @@ The simulation can be run by typing
 ```Shell
 OMP_NUM_THREADS=<n> ./soar sims/lfd64small.cfg
 ```
-where `<n>` is replaced with the number of OpenMP threads to use.
+where `<n>` is replaced with the number of OpenMP threads to use. The example
+may take approximately ten minutes to run, depending on hardware and the number
+of threads used. The following sections describe the example configuration file,
+and output data that is created from it.
 
+## The example simulation configuration file
 The configuration file is divided into sections. The file consists of keywords
 followed by one or more parameters. A pound symbol in front of any line
 signifies that it is a comment. The first section sets up the physical scales,
-specified in SI units, which are use to scale all of the simulation variables:
+specified in SI units, which are used to scale all of the simulation variables:
 ```
 # Physical scales in SI units
 l_phys              10
@@ -139,7 +152,7 @@ g_phys              9.80665
 nu_phys             1.48e-5
 ```
 This sets the simulation length scale to be 10&nbsp;m and the gravitational
-acceleration to be 9.80655&nbsp;m/s&sup2;, which is the mean value at the
+acceleration to be 9.80665&nbsp;m/s&sup2;, which is the mean value at the
 Earth's surface. From these two constants, a velocity scale and time scale can
 be derived as described in the paper. The velocity scale and time scale can
 also be set using the `v_phys` and `t_phys` keywords. Exactly two scales need
@@ -161,7 +174,8 @@ random_seed         100
 `num_trials` sets the total number of random wind fields that will be
 simulated. `gliders_per_trial` sets the number of gliders that are simulated
 within each wind field. The product of these two numbers sets the total number
-of gliders to be considered, from which stastical averages will be calculated.
+of gliders to be considered, from which statistical averages will be
+calculated.
 
 The total simulation duration can be set in simulation units using the
 `duration` keyword. Alternatively, a `_phys` suffix can be appended to specify
@@ -187,13 +201,13 @@ typical value for soaring birds. `ctl_duration` sets the duration of time
 between the glider controlling its bank angle.
 
 `bank_angle_step` sets the increment in bank angles for the glider in degrees.
-`bank_angle_range` set the number of discrete bank angle steps that the glider
-can achieve. Here, the bank angle is set to 10&deg;, and the full step range
+`bank_angle_range` sets the number of discrete bank angle steps that the glider
+can achieve. Here, the bank angle step is set to 10&deg;, and the full step range
 is -40&deg;, -30&deg;, &#8230;, 40&deg;. `bank_angle_control` sets the
 allowable number of step changes at each control time point. Here, the -1 to 1
-range corresponds to three possible controls of -10&deg, 0&deg;, and +10&deg.
+range corresponds to three possible controls of -10&deg;, 0&deg;, and +10&deg;.
 
-`integration_type` set the numerical integration method used for the glider ODE
+`integration_type` sets the numerical integration method used for the glider ODE
 model. It can be set to either `euler` for the forward Euler method, or
 `improv_e` for the improved Euler method. Both integration methods are
 explicit, and therefore have a restriction on the numerical timestep.
@@ -213,27 +227,40 @@ wind_ts_pad         0.2
 `box_size` sets the side length of the simulation box, specified in
 simulation units.
 
-`wind_rms` sets the root-mean-squared (RMS) wind velocity in simulation units,
-and `wind_C_phys` sets the timescale for the temporal correlations. During the
-simulation, the Fourier modes of the wind field are updated according to a
-stochastic differential equation (SDE) following an Ornstein&#8211;Uhlenbeck
-(OU) process. This is numerical integration has a timestep restriction. The
-computation of the timestep and the usage of `wind_ts_pad` is described in the
-following section. `wind_C_phys` also accepts the `frozen` keyword if the wind
-field is frozen in time.
+Each component of the wind field in the three coordinates evolves
+independently. In this example, the root-mean-squared (RMS) of each velocity
+component is set to 1&nbsp;m/s. `wind_rms_phys` sets the RMS wind velocity
+magnitude in physical units, which is &radic;3 &times; 1&nbsp;m/s =
+1.732&nbsp;m/s in this case. `wind_C_phys` sets the timescale for the temporal
+correlations in physical units. If the `_phys` suffix is dropped from either of
+these keywords, the values will be interpreted as simulation units instead.
+
+During the simulation, the Fourier modes of the wind field are updated
+according to a stochastic differential equation (SDE) following an
+Ornstein&#8211;Uhlenbeck (OU) process. This numerical integration has a
+timestep restriction. The computation of the timestep and the usage of
+`wind_ts_pad` is described in the following section. `wind_C_phys` and `wind_C`
+both accept the `frozen` keyword if the wind field is frozen in time.
 
 The next section sets up the wind prediction model:
 ```
 # Wind prediction model
-wind_model          full_cubic
+wind_model          full_lanczos2
 hermite_segments    20
 ```
-The `wind_model` keyword chooses method that the glider uses to predict the
+The `wind_model` keyword chooses the method that the glider uses to predict the
 wind. The `full_cubic` option corresponds to a glider with complete information
 about wind. This is achieved by taking the fast Fourier transform of the wind
-field, and then performing tricubic interpolation to evaluate the wind at an
-arbitrary location. The alternative `full_linear` option uses trilinear
-interpolation, which is faster to evaluate but is slightly less accurate.
+field, and then performing Lanczos2 interpolation [7] to evaluate the wind at an
+arbitrary location. Two alternative are available:
+
+- The `full_linear` option uses trilinear interpolation, which is faster to
+  evaluate but is slightly less accurate.
+- The `full_cubic [<a>]` option uses tricubic interpolation based on Keys'
+  formula [8]. This formula has a free parameter *a* that controls the shape of
+  the interpolation kernel. The program defaults to a value of *a* = -0.84,
+  which was determined empirically to give close results to the exact wind
+  field. This parameter can be overridden.
 
 If the wind field is time-varying, then complete-information models must also
 predict the wind up to a duration *T* into the future, by assuming that the
@@ -245,8 +272,8 @@ boundary, and uses cubic
 time to evaluate the expected wind at any point in the future.
 
 An alternative wind prediction model is to use Gaussian process regression
-(GPR), so that the glider only measures the wind that is has encountered during
-flight. A typical configration of this is as follows:
+(GPR), so that the glider only measures the wind that it has encountered during
+flight. A typical configuration of this is as follows:
 ```
 # Wind prediction model (GPR)
 #gpr_memory          50
@@ -277,7 +304,9 @@ The `mcts` option enables the Monte Carlo tree search for planning. `n_mcts`
 sets the total number of MCTS trials. `mcts_depth` sets the depth of the MCTS
 tree, which corresponds to the number of actions to make. `mcts_ex_fac`
 controls the exploration factor, with higher values corresponding to a higher
-probabilities of choosing less favorable branches of the search tree.
+probability of choosing less favorable branches of the search tree.
+The `planning` keyword will also accept a `random` option for a glider
+that chooses among its available moves at each step with equal probability.
 
 The final section of the configuration controls the simulation output:
 ```
@@ -293,16 +322,16 @@ The `snapshots` keyword is followed by a list of the types of output snapshots
 to save, with four different options:
 
 - `glider_xyz` outputs the glider positions in a text file.
-- `glider_mb` outputs the glider positions in a binary file that can be
-  unpacked later. Binary output is more space-efficient than text.
-- `glider_fb` outputs full glider information, including positions and
-  wind information.
+- `glider_mb` outputs a minimal binary file that contains the glider positions
+  that can be unpacked later. Binary output is more space-efficient than text.
+- `glider_lb` outputs a larger binary file of glider information, including
+  positions and wind information.
 - `wind_modes` outputs the full three-dimensional grid of Fourier mode
   coefficients for the wind field.
 
 The `summary` keyword is followed by a list of summary statistics to output.
 `climb_stats` outputs a file with statistics about the following four
-quantity:
+quantities:
 
 1. glider height,
 2. glider height rate-of-change,
@@ -311,15 +340,144 @@ quantity:
 
 For each quantity, the minimum, maximum, mean, and standard deviation across
 the entire data set of gliders are stored. The primary contribution to the
-energy comes from the potential energy of glider. Therefore quantities 1 &amp; 3
-are similar, and quantities 2 &amp; 4 are similar. Quantities 3 &amp; 4 differ
-slightly, because they also contain contributions from kinetic energy.
+energy comes from the potential energy of the glider. Therefore quantities 1
+&amp; 3 are similar, and quantities 2 &amp; 4 are similar. Quantities 3 &amp; 4
+differ slightly, because they also contain contributions from kinetic energy.
+
+## Output data
+For a given configuration file **<name>.cfg**, all output data will be stored
+within a directory called **<name>.odr**, where **odr** stands for
+&#8220;**o**utput **d**i**r**ctory&#8221;. When the example simulation is run,
+the data is therefore stored in **lfd64small.odr**.
+
+The `snapshots glider_mb` option in the test simulation creates binary files
+**glider_mb.<N>** where `N` varies from 0 to 3 for the four different wind
+fields that were simulated. Each file contains the all of the glider
+trajectories in a binary format. A utility called **unpack** is provided,
+which can output a particular glider trajectory as plain text, with each line
+listing four numbers for the time and (*x*,*y*,*z*) position of the glider,
+all given in simulation units. The utility has the syntax
+```Shell
+./unpack [-w] [-z] <output_dir> <trial> <glider> <output_file>
+```
+Hence, to output the glider 0 in wind field 2 for the example simulation,
+the utility can be run with
+```Shell
+./unpack lfd64small.cfg 2 0 gtraj.txt
+```
+The three-dimensional trajectory can be plotted using the freeware plotting
+program [Gnuplot](https://gnuplot.info) with the command
+```Gnuplot
+splot 'gtraj.txt' u 2:3:4 w l
+```
+The height of the glider as a function of time can be plotted using the command
+```Gnuplot
+splot 'gtraj.txt' u 1:4 w l
+```
+If the `-w` option is provided to the **unpack** utility, then the wind components
+at the glider's position are also outputted; this requires that the larger binary
+files were stored using the `snapshots glider_lb` option. If the `-z` option is
+provided, then the glider's initial height is subtracted out; this option can
+be useful to compare the gained height for many gliders.
+
+If the `output_file` option is specified as `-`, then the utility outputs the
+data to standard output. This makes it possible to pipe data directly into Gnuplot
+without storing a separate file:
+```Gnuplot
+splot '<./unpack lfd64small.cfg 2 0 -' u 2:3:4 w l
+```
+All eight gliders in wind field 2 can be visualized with the command
+```Gnuplot
+splot for[n=0:7] sprintf('<./unpack lfd64small.cfg 2 %d -',n) \
+      u 2:3:4 w l t sprintf("Glider %d",n)
+```
+
+## Additional configuration keywords
+The input files can contain a number of keywords for enabling further
+functionality or performing diagnostic tests:
+
+- `box_size_xyz` accepts three arguments for the wind field size in the three
+  coordinate directions, specified in simulation units. It can be used
+  to simulate gliders in a non-cubic box.
+
+- `wf_modes_xyz` accepts three arguments for the number of Fourier modes
+  in the wind field in the three coordinate directions.
+
+- For a full information glider in a non-frozen wind field, `bypass_mr`
+  switches off the mean reversion in the glider's wind model. The glider
+  assumes that the current wind will continue as is, and it will not capture
+  how on average the wind will mean revert to zero. This is a useful diagnostic
+  check of the simulation, since it shows that in rapidly time-evolving wind
+  fields, mean-reversion substantially enhances the glider's performance.
+
+- When the simulation terminates, the `summary checksums` option makes the code
+  check that the kernel inverses that are efficiently computed using the
+  Woodbury formula do indeed match a full LAPACK calculation. The code computes
+  the Frobenius norm between the Woodbury-formula-based inverse and the LAPACK
+  inverse, and scales it by the matrix size to give a measure of error per
+  matrix entry.
+
+- `gpr_full_compute` forces the Gaussian process regression class to bypass the
+  Woodbury formula and instead always do a full matrix inverse via LAPACK.
+
+- The keywords `gpr_rs`, `gpr_ts` can be used to set the number of gridpoints
+  in space and time, respectively, for the precomputed table of kernel values
+  *K*(*r*,*t*) in Gaussian process regression. `gpr_dist_pad` sets the padding
+  factor to apply to the base estimate of the range of *r* values needed in
+  the table. The `gpr_k_r_param` keyword requires two arguments to set the number
+  of gridpoints in space, and the padding factor. It is intended to be used
+  for frozen wind field simulation where the *K* is a function of *r* only.
+
+- In extremely rare instances it is possible for two rows in the kernel matrix
+  to be near-linearly-dependent. This happens most often in a frozen wind field
+  when a glider circles back to a position that it had visited before, leading
+  to two measurements at near-identical positions, and two rows with
+  near-identical kernel entries. This can cause a loss of accuracy in the
+  Woodbury formula. `gpr_ker_tol` sets a numerical tolerance for an
+  experimental option that identifies these cases and skips over the additional
+  measurement, to avoid the near-singular behavior.
+
+- The `path_interval` option makes the simulation output binary files
+  containing all of the MCTS paths for all of the gliders. This can be useful
+  for diagnostic purposes. The option requires a single argument that sets
+  the frequency at which the paths are stored. Note that this option can
+  result in a large amount of data being generated.
+
+- The `wind_cor` option computes the correlation coefficient between the
+  real wind field and the one that GPR predicts, at various times into the
+  future. It is based on GPR predictions along all of the MCTS paths that the
+  gliders consider during planning. These statistics are only valid in a
+  frozen wind field, where it is known what the real wind field will be in the
+  future. The option requires one argument that sets a time (in simulation units)
+  at which to start collecting data. The variant `wind_cor_phys` sets the time
+  in physical units instead.
+
+- The `mcts_info` option outputs statistical information about the
+  MCTS. It outputs the average number of nodes in the search tree at different
+  depths. The option requires one argument that sets a time in simulation units
+  at which to start collecting data. The variant `mcts_info_phys` sets the time
+  in physical units instead.
+
+- `wind_alpha` sets the prefactor in the wind energy spectrum. It is an
+  alternative to specifying the RMS wind velocity magnitude.
+
+- `summary en_components` outputs information about the different components to
+  the glider's energy gain.
+
+- `wind_slice` outputs a two-dimensional cross-section of the wind field. It
+  accepts three options: (1) the slice direction as `x`, `y`, or `z`; (2)
+  the wind component as `wx`, `wy`, or `wz`; and (3) the grid index along
+  the slice direction at which to output the field. The field is stored in
+  a binary format that can be read by the freeware plotting program
+  [Gnuplot](https://www.gnuplot.info). See the
+  [utils-gp](https://github.com/chr1shr/utils-gp) for details on the binary
+  format.
 
 ## Timestep selection
 The code automatically computes the timestep to use based on two analytical
 calculations of timestep restrictions. The first restriction comes from the
 stochastic integration of the Fourier modes in the turbulence model. Each mode
-follows an Orstein&#8211;Uhlenbeck (OU) process as described in the paper. The
+follows an Ornstein&#8211;Uhlenbeck (OU) process as described in the paper. The
 OU process features a mean-reversion term that places a restriction on the
 timestep in order for the integration to be stable. The tightest restriction
 comes from the mode with the smallest wavelength. Define this restriction to be
@@ -345,60 +503,19 @@ case when a frozen wind field is used, the first timestep is ignored and
 *&Delta;t*<sub>*p*</sub> =*p*<sub>2</sub> *&Delta;t*<sub>2</sub>.
 
 Finally, the timestep *&Delta;t*<sub>*p*</sub> is adjusted downwards
-slightly to *&Delta;t*<sub>*p*</sub> so that an integer number of timesteps
+slightly to *&Delta;t*<sub>*a*</sub> so that an integer number of timesteps
 will exactly cover the integration intervals between output snapshots, and MCTS
 &amp; GPR computations.
 
-## Code structure
-The code is structured around several C++ classes:
+## Code structure, additional utilities, and further tests
+The code is structured around several C++ classes provided in the **src**
+directory, which are described in [**src/README.md**](src/README.md). This
+directory contains the main program **soar** as well as three utilities
+**unpack**, **get_paths**, and **climb_rate**.
 
-- **glider** – This class represents the state of a single glider, including
-  its position, velocity, and bank angle. The class contains routines for
-  integrating the glider state via the forward Euler method or improved Euler
-  method.
-
-- **glider_model** - This class contains all of the glider model parameters.
-  It also calculates several trigonometrical tables of bank angles that are
-  used in the differential equations for the glider. Only one instance of this
-  class is needed, and can be shared amongst many **glider** instances.
-
-- **turb_fluid** – This class represents a model of three-dimensional
-  turbuluent wind field made up of stochastically evolving set of a Fourier
-  modes. It contains routines for stepping the modes forward in time, as well as
-  evaluating the wind at one or several locations.
-
-- **turb_fluid_grid** – This class is derived from **turb_fluid**. It contains
-  additional functionality to evaluate the wind on a full three-dimensional grid
-  using the FFTW library. It also contains routines for rapidly evaluating the
-  wind at any location using either trilinear or tricubic interpolation.
-
-- **turb_fluid_grid_mr** - This class is derived from **turb_fluid_grid**. It
-  contains additional functionality to estimate the wind field into the future
-  assuming that the Fourier modes undergo reversion to the mean, following
-  the OU process.
-
-- **kernel_func**, **kernel_rt**, &amp; **kernel_r** – These classes are used
-  to evaluate the kernel function used in the Gaussian process regression
-  (GPR). The kernel function is derived from the correlations in the wind
-  field. Since the kernel function needs to be called often, the class creates
-  a lookup table of values,
-
-- **fileinfo** – This class parses the text configuration files and reads in
-  all of the required parameters. It also performs calculations for
-  initializing the simulation, such as calculating the timestep.
-
-- **cli_stats** &amp; **mti_stats** – Small structures for computing the mean,
-  standard deviation, minimum, and maximum of a group of numbers. cli\_stats is
-  used for collecting statistics on climb rates, and mti\_stats is used
-  for collecting statistics on the MCTS.
-
-- **soaring_sim** – This is the main class to performing the soaring simulations,
-  and makes use of all the other classes as components. This class also contains
-  output routines.
-
-The code is commented in the style of [Doxygen](https://www.doxygen.nl/), where
-each class and function has a special comment block beginning with `/**` that
-describes it.
+The **tests** directory contains several additional test programs, including
+some that were used to generate data for the paper. The programs are documented
+in [**tests/README.md**](tests/README.md).
 
 ## Bibliography
 1. R. V. Baudinette and K. Schmidt-Nielsen, *Energy cost of gliding flight in herring gulls*, Nature **248**, 83&#8211;84 (1974). [doi:10.1038/248083b0](https://doi.org/10.1038/248083b0)
@@ -412,3 +529,7 @@ describes it.
 5. Gautam Reddy, Jerome Wong-Ng, Antonio Celani, Terrence Sejnowski, and Massimo Vergassola, *Glider soaring via reinforcement learning in the field*, Nature **562**, 236&#8211;239 (2018). [doi:10.1038/s41586-018-0533-0](https://doi.org/10.1038/s41586-018-0533-0)
 
 6. Jimmy C. H. Fung, Julian C. R. Hunt, Nadeem Malik, and R. J. Perkins, *Kinematic simulation of homogeneous turbulence by unsteady random Fourier modes*, J. Fluid Mech. **236**, 281&#8211;318 (1992). [doi:10.1017/S0022112092001423](https://doi.org/10.1017/S0022112092001423)
+
+7. Ken Turkowski, *Filters for Common Resampling Tasks*, in Graphics Gems (ed. Andrew S. Glassner), Academic Press, 1990.
+
+8. Robert G. Keys, *Cubic convolution interpolation for digital image processing*, IEEE Trans. Acoust., Speech, Signal Process. **29**, 1153&#8211;1160 (1981). [doi:10.1109/TASSP.1981.1163711](https://10.1109/TASSP.1981.1163711)
