@@ -66,7 +66,8 @@ struct mti_stats {
     inline void mu_sig(double &mu,double &sig) {
         double nor=1./n;
         mu=fmom*nor;
-        sig=sqrt(smom*nor-mu*mu);
+        double sig2=smom*nor-mu*mu;
+        sig=sig2>0?sqrt(sig2):0;
     }
     /** Updates the statistics to account for a given value.
      * \param[in] x the value. */
