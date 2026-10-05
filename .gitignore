@@ -1,0 +1,41 @@
+# Output directories
+*.odr
+
+# Output data
+*.dat
+
+# Compiled source
+*.o
+*.a
+
+# Dependency files
+*.d
+
+# Editor backups and swap files
+*~
+*.bak
+*.sw[a-p]
+.*.sw[a-p]
+
+# Executables
+/soar
+/unpack
+/climb_rate
+/get_paths
+/tests/t_correl
+/tests/kf_calc
+/tests/t_wind_field
+/tests/t_vel_stats
+/tests/t_mr_interp
+/tests/t_mr_test
+/tests/gl_test
+/tests/gl_conv
+/tests/lapack_test
+/tests/w_rms_modes
+/tests/m_histogram
+
+# Local configuration file
+config.mk
+
+# Mac OS display settings file
+.DS_Store
