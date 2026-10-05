@@ -9,7 +9,7 @@ lp_lflags=-llapack -lblas
 
 # FFTW flags
 fftw_iflags=
-fftw_lflags=-DFFTW_THREAD -lfftw3_omp -lfftw3
+fftw_lflags=-lfftw3_omp -lfftw3
 
 # libpng flags
 png_iflags=

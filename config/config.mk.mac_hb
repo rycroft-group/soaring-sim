@@ -11,7 +11,7 @@ lp_lflags=-framework Accelerate
 
 # FFTW flags (installed via Homebrew)
 fftw_iflags=
-fftw_lflags=-lfftw3
+fftw_lflags=-lfftw3_omp -lfftw3
 
 # libpng flags (installed via Homebrew)
 png_iflags=
