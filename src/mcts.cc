@@ -64,7 +64,7 @@ int mcts::select_child(int d,int n,short nact) {
           r=gsl_rng_uniform(rng)*(fac*tw+nc*ex1+nz*ex2);
     k=0;
     while(k<nact-1) {
-        r-=t[d+k].n>0?fac*wei[k]+ex1:0.5+ex2;
+        r-=t[d+k].n>0?fac*wei[k]+ex1:ex2;
         if(r<0) return k;
         k++;
     }
